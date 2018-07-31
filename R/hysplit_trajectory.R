@@ -74,23 +74,23 @@ hysplit_trajectory <- function(lat = 49.263,
                                lon = -123.250,
                                height = 50,
                                duration = 24,
-                               run_period = "2015-07-01",
+                               run_period = "2010-02-03",
                                daily_hours = 0,
-                               direction = "forward",
-                               met_type = "reanalysis",
+                               direction = "backward",
+                               met_type = "gdas1",
                                vert_motion = 0,
                                model_height = 20000,
-                               extended_met = FALSE,
+                               extended_met = TRUE,
                                return_traj_df = TRUE,
                                traj_name = NULL,
                                exec_dir = NULL,
                                met_dir = NULL,
                                binary_path = NULL) {
-  
+
   if (is.null(exec_dir)) exec_dir <- getwd()
   
   if (is.null(met_dir)) met_dir <- getwd()
-  
+    
   if (is.null(binary_path)) {
     
     if (get_os() == "mac") {
@@ -101,7 +101,7 @@ hysplit_trajectory <- function(lat = 49.263,
     
     if (get_os() == "unix") {
       binary_path <-
-        system.file("linux-amd64/hyts_std",
+        system.file("linux-x86/hyts_std",
                     package = "SplitR")
     }
     
@@ -155,7 +155,7 @@ hysplit_trajectory <- function(lat = 49.263,
   hysplit_config_init(dir = exec_dir)
   
   if (extended_met) {
-    setup_cfg <- readLines('SETUP.CFG')
+    setup_cfg <- readLines(paste0(exec_dir, "/", "SETUP.CFG"))
     setup_cfg <- gsub("(tm_.* )(0),", "\\11,", setup_cfg)
     cat(setup_cfg,
         sep = "\n",
@@ -175,10 +175,10 @@ hysplit_trajectory <- function(lat = 49.263,
   # of model runs
   for (z in 1:length(coords$lat)) {
     if (z == 1) ensemble_df <- data.frame()
-    
+
     lat <- coords$lat[z]
     lon <- coords$lon[z]
-    
+
     # Determine whether the run_years input is a single
     # year or a range
     if (exists("run_years")) run_years_single_range <-
@@ -224,10 +224,10 @@ hysplit_trajectory <- function(lat = 49.263,
     all_trajectory_files <- 
       vector(mode = "character",
              length = 0)
-    
+
     # Make loop with all run days
     for (i in 1:length(list_run_days)) {
-      
+
       # Define starting time parameters
       start_year_GMT <- 
         substr(as.character(year(list_run_days[i])), 3, 4)
@@ -251,8 +251,8 @@ hysplit_trajectory <- function(lat = 49.263,
       
       # Make nested loop with daily beginning hours
       for (j in daily_hours) {    
-        start_hour_GMT <- j
-        
+          start_hour_GMT <- j
+
         #--- Determine which met files are required for
         #    this run
         
@@ -340,7 +340,7 @@ hysplit_trajectory <- function(lat = 49.263,
                                     "%B")), 1, 3),
               substr(year(start_time_GMT), 3, 4), ".w4"),
             ifelse(month(start_time_GMT) == 2 &
-                     leap_year == TRUE, 0,
+                     leap_year == TRUE, 
                    paste0(
                      "gdas1.",
                      substr(
@@ -348,7 +348,7 @@ hysplit_trajectory <- function(lat = 49.263,
                                       "%B")), 1, 3),
                      substr(
                        year(start_time_GMT), 3, 4),
-                     ".w5")))
+                     ".w5"),0))
         
         if (case_over_year &
             met_type == "gdas1") met <- 
@@ -385,12 +385,12 @@ hysplit_trajectory <- function(lat = 49.263,
               substr(year(end_time_GMT), 3, 4), ".w4"),
             ifelse(
               month(end_time_GMT) == 2 &
-                leap_year == TRUE, 0,
+                leap_year == TRUE, 
               paste0("gdas1.",
                      substr(tolower(format(end_time_GMT,
                                            "%B")), 1, 3),
                      substr(year(end_time_GMT), 3, 4),
-                     ".w5")),
+                     ".w5"),0),
             paste0(
               "gdas1.",
               substr(tolower(format(start_time_GMT,
@@ -464,7 +464,8 @@ hysplit_trajectory <- function(lat = 49.263,
                              width = 2,
                              format = "d",
                              flag = "0"))))
-        
+
+          
         # Remove list values containing '0' (representing
         # missing .w5 data files for Feb in leap years)
         if (exists("met")) met <- met[!met %in% c(0)]
@@ -744,9 +745,9 @@ hysplit_trajectory <- function(lat = 49.263,
         path = paste0(exec_dir, "/",
                       folder_name))
     }
-    
+
     if (any(c("mac", "unix") %in% get_os())) {
-      
+        
       # Perform the movement of all trajectory files
       # into a folder residing to the output directory
       for (i in 1:length(all_trajectory_files)) {
@@ -757,7 +758,7 @@ hysplit_trajectory <- function(lat = 49.263,
                       ")"))
       }
     }
-    
+
     if (get_os() == "win") {
       
       # Perform the movement of all trajectory files
